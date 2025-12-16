@@ -18,10 +18,13 @@ from .exceptions import (
     ValidationError,
 )
 from .models import (
+    APIMeta,
     APIResponse,
     Offer,
     OfferWithHistory,
     ProductDetails,
+    ProductSearchResult,
+    ProductWithOffers,
     ScheduledProduct,
     ShopSavvyConfig,
     UsageInfo,
@@ -133,57 +136,94 @@ class ShopSavvyDataAPI:
         except httpx.HTTPError as e:
             raise APIError(f"HTTP error: {str(e)}")
     
+    def search_products(
+        self,
+        query: str,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None
+    ) -> ProductSearchResult:
+        """
+        Search for products by keyword
+
+        Args:
+            query: Search query or keyword (e.g., "iphone 15 pro", "samsung tv")
+            limit: Maximum number of results (default: 20, max: 100)
+            offset: Offset for pagination (default: 0)
+
+        Returns:
+            Search results with pagination info
+
+        Example:
+            >>> results = api.search_products("iphone 15 pro", limit=10)
+            >>> for product in results.data:
+            ...     print(product.name)
+        """
+        params = {"q": query}
+        if limit is not None:
+            params["limit"] = str(limit)
+        if offset is not None:
+            params["offset"] = str(offset)
+
+        response_data = self._make_request("GET", "/products/search", params=params)
+        return ProductSearchResult(**response_data)
+
     def get_product_details(
-        self, 
-        identifier: str, 
+        self,
+        identifier: str,
         format: Optional[Literal["json", "csv"]] = None
-    ) -> APIResponse[ProductDetails]:
+    ) -> APIResponse[List[ProductDetails]]:
         """
         Look up product details by identifier
-        
+
         Args:
-            identifier: Product identifier (barcode, ASIN, URL, model number, or ShopSavvy product ID)
+            identifier: Product identifier (barcode, ASIN, URL, model number, product name, or ShopSavvy product ID)
             format: Response format (json or csv)
-            
+
         Returns:
-            Product details
-            
+            Product details (as a list, even for single identifier)
+
         Example:
-            >>> product = api.get_product_details("012345678901")
-            >>> print(product.data.name)
+            >>> # By barcode
+            >>> result = api.get_product_details("012345678901")
+            >>> if result.data:
+            ...     print(result.data[0].title)
+            >>>
+            >>> # By product name
+            >>> result = api.get_product_details("iPhone 15 Pro")
+            >>> print(result.data[0].name)  # .name is alias for .title
         """
-        params = {"identifier": identifier}
+        params = {"ids": identifier}
         if format:
             params["format"] = format
-        
-        response_data = self._make_request("GET", "/products/details", params=params)
-        return APIResponse[ProductDetails](**response_data)
+
+        response_data = self._make_request("GET", "/products", params=params)
+        return APIResponse[List[ProductDetails]](**response_data)
     
     def get_product_details_batch(
-        self, 
-        identifiers: List[str], 
+        self,
+        identifiers: List[str],
         format: Optional[Literal["json", "csv"]] = None
     ) -> APIResponse[List[ProductDetails]]:
         """
         Look up details for multiple products
-        
+
         Args:
             identifiers: List of product identifiers
             format: Response format (json or csv)
-            
+
         Returns:
             List of product details
-            
+
         Example:
             >>> products = api.get_product_details_batch(["012345678901", "B08N5WRWNW"])
             >>> for product in products.data:
             ...     print(product.name)
         """
-        params = {"identifiers": ",".join(identifiers)}
+        params = {"ids": ",".join(identifiers)}
         if format:
             params["format"] = format
-        
-        response_data = self._make_request("GET", "/products/details", params=params)
+
+        response_data = self._make_request("GET", "/products", params=params)
         return APIResponse[List[ProductDetails]](**response_data)
     
     def get_current_offers(
@@ -191,31 +231,33 @@ class ShopSavvyDataAPI:
         identifier: str,
         retailer: Optional[str] = None,
         format: Optional[Literal["json", "csv"]] = None
-    ) -> APIResponse[List[Offer]]:
+    ) -> APIResponse[List[ProductWithOffers]]:
         """
         Get current offers for a product
-        
+
         Args:
-            identifier: Product identifier
+            identifier: Product identifier (barcode, ASIN, URL, model number, product name, or ShopSavvy product ID)
             retailer: Optional retailer to filter by
             format: Response format (json or csv)
-            
+
         Returns:
-            Current offers
-            
+            Products with their current offers
+
         Example:
-            >>> offers = api.get_current_offers("012345678901")
-            >>> for offer in offers.data:
-            ...     print(f"{offer.retailer}: ${offer.price}")
+            >>> result = api.get_current_offers("012345678901")
+            >>> for product in result.data:
+            ...     print(f"Product: {product.title}")
+            ...     for offer in product.offers:
+            ...         print(f"  {offer.retailer}: ${offer.price}")
         """
-        params = {"identifier": identifier}
+        params = {"ids": identifier}
         if retailer:
             params["retailer"] = retailer
         if format:
             params["format"] = format
-        
+
         response_data = self._make_request("GET", "/products/offers", params=params)
-        return APIResponse[List[Offer]](**response_data)
+        return APIResponse[List[ProductWithOffers]](**response_data)
     
     def get_current_offers_batch(
         self,
@@ -234,12 +276,12 @@ class ShopSavvyDataAPI:
         Returns:
             Dictionary mapping identifiers to their offers
         """
-        params = {"identifiers": ",".join(identifiers)}
+        params = {"ids": ",".join(identifiers)}
         if retailer:
             params["retailer"] = retailer
         if format:
             params["format"] = format
-        
+
         response_data = self._make_request("GET", "/products/offers", params=params)
         return APIResponse[Dict[str, List[Offer]]](**response_data)
     
@@ -270,7 +312,7 @@ class ShopSavvyDataAPI:
             ...     print(f"{offer.retailer}: {len(offer.price_history)} price points")
         """
         params = {
-            "identifier": identifier,
+            "ids": identifier,
             "start_date": start_date,
             "end_date": end_date,
         }
@@ -278,8 +320,8 @@ class ShopSavvyDataAPI:
             params["retailer"] = retailer
         if format:
             params["format"] = format
-        
-        response_data = self._make_request("GET", "/products/history", params=params)
+
+        response_data = self._make_request("GET", "/products/offers/history", params=params)
         return APIResponse[List[OfferWithHistory]](**response_data)
     
     def schedule_product_monitoring(

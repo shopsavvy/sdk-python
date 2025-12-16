@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shopsavvy-sdk"
-version = "1.0.2"
+version = "1.0.3"
 description = "Official Python SDK for ShopSavvy Data API - Access product data, pricing, and price history"
 readme = "README.md"
 authors = [

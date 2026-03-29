@@ -432,6 +432,69 @@ class ShopSavvyDataAPI:
         response_data = self._make_request("DELETE", "/products/schedule", json_data=json_data)
         return APIResponse[List[Dict[str, Union[str, bool]]]](**response_data)
     
+    def get_deals(
+        self,
+        sort: str = "hot",
+        limit: int = 25,
+        offset: int = 0,
+        category: Optional[str] = None,
+        retailer: Optional[str] = None,
+        tag: Optional[str] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        grade: Optional[str] = None,
+        format: str = "json",
+    ) -> Dict:
+        """
+        Browse current shopping deals
+
+        Args:
+            sort: Sort algorithm (hot, new, top-hour, top-day, top-week)
+            limit: Results per page (1-100)
+            offset: Pagination offset
+            category: Filter by category
+            retailer: Filter by retailer domain
+            tag: Filter by deal tag
+            min_price: Minimum deal price
+            max_price: Maximum deal price
+            grade: Minimum grade (A, B, C, D)
+            format: Response format (json, csv)
+
+        Returns:
+            Deals response with deals array and pagination
+
+        Example:
+            >>> deals = api.get_deals(sort="hot", limit=10, grade="B")
+            >>> for deal in deals["deals"]:
+            ...     print(f'{deal["grade"]["letter"]} {deal["title"]}')
+        """
+        params: Dict[str, str] = {"sort": sort, "limit": str(limit), "offset": str(offset)}
+        if category: params["category"] = category
+        if retailer: params["retailer"] = retailer
+        if tag: params["tag"] = tag
+        if min_price is not None: params["min_price"] = str(min_price)
+        if max_price is not None: params["max_price"] = str(max_price)
+        if grade: params["grade"] = grade
+        if format != "json": params["format"] = format
+        return self._make_request("GET", "/deals", params=params)
+
+    def get_product_review(self, identifier: str) -> Dict:
+        """
+        Get TLDR review for a product
+
+        Args:
+            identifier: Product identifier (barcode, ASIN, URL, model number)
+
+        Returns:
+            Review response with pros, cons, bottom line, and scores
+
+        Example:
+            >>> result = api.get_product_review("B09XS7JWHH")
+            >>> if result.get("review"):
+            ...     print("Pros:", result["review"]["pros"])
+        """
+        return self._make_request("GET", "/products/reviews", params={"id": identifier})
+
     def get_usage(self) -> APIResponse[UsageInfo]:
         """
         Get API usage information

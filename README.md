@@ -140,7 +140,7 @@ amazon_product = api.get_product_details("B08N5WRWNW")
 url_product = api.get_product_details("https://www.amazon.com/dp/B08N5WRWNW")
 
 # Search by model number
-model_product = api.get_product_details("iPhone-14-Pro")
+model_product = api.get_product_details("MQ023LL/A")  # iPhone model number
 
 # Access product information
 print(f"📦 Product: {product.data.name}")

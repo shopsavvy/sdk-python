@@ -18,6 +18,13 @@ from .models import (
     UsageInfo,
     APIResponse,
     ShopSavvyConfig,
+    Deal,
+    DealGrade,
+    DealPricing,
+    DealVotes,
+    DealsResponse,
+    TLDRReview,
+    ReviewResponse,
 )
 from .exceptions import (
     ShopSavvyError,
@@ -28,7 +35,7 @@ from .exceptions import (
     ValidationError,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "ShopSavvy by Monolith Technologies, Inc."
 __email__ = "business@shopsavvy.com"
 
@@ -45,6 +52,13 @@ __all__ = [
     "UsageInfo",
     "APIResponse",
     "ShopSavvyConfig",
+    "Deal",
+    "DealGrade",
+    "DealPricing",
+    "DealVotes",
+    "DealsResponse",
+    "TLDRReview",
+    "ReviewResponse",
     # Exceptions
     "ShopSavvyError",
     "APIError",

@@ -45,6 +45,15 @@ class ProductDetails(BaseModel):
     model: Optional[str] = Field(None, description="Product model number")
     mpn: Optional[str] = Field(None, description="Manufacturer part number")
     color: Optional[str] = Field(None, description="Product color")
+    title_short: Optional[str] = Field(None, description="Shortened human-friendly title")
+    slug: Optional[str] = Field(None, description="URL-friendly slug")
+    description: Optional[str] = Field(None, description="Product description text")
+    categories: Optional[List[str]] = Field(None, description="Category paths")
+    attributes: Optional[Dict[str, str]] = Field(None, description="Product specifications (flat key-value)")
+    rating: Optional[Dict[str, Any]] = Field(None, description="Aggregated rating with value and count")
+    score: Optional[Dict[str, Any]] = Field(None, description="Expert quality scores (0-100 scale)")
+    keywords: Optional[List[str]] = Field(None, description="Relevant search keywords")
+    identifiers: Optional[Dict[str, Any]] = Field(None, description="All known product identifiers")
 
     # Convenience aliases
     @property
@@ -251,3 +260,90 @@ ScheduledProductsResponse = APIResponse[List[ScheduledProduct]]
 RemovalResponse = APIResponse[Dict[str, bool]]
 RemovalBatchResponse = APIResponse[List[Dict[str, Union[str, bool]]]]
 UsageResponse = APIResponse[UsageInfo]
+
+
+# Deal types
+
+class DealGrade(BaseModel):
+    """Expert deal grade"""
+    letter: str = Field(..., description="Grade letter (A, B, C, D, F)")
+    suffix: Optional[str] = Field(None, description="Grade suffix (+, -)")
+    value: float = Field(..., description="Numeric grade value (0-1)")
+    justification: Optional[str] = Field(None, description="Why this grade was assigned")
+
+
+class DealPricing(BaseModel):
+    """Deal pricing information"""
+    current: float = Field(..., description="Current deal price")
+    original: Optional[float] = Field(None, description="Original/MSRP price")
+    currency: str = Field("USD", description="Price currency")
+
+
+class DealVotes(BaseModel):
+    """Community deal votes"""
+    upvotes: int = Field(0)
+    downvotes: int = Field(0)
+    score: int = Field(0)
+
+
+class DealTag(BaseModel):
+    """Deal taxonomy tag"""
+    slug: str
+    display: str
+
+
+class Deal(BaseModel):
+    """A shopping deal with expert grading"""
+    path: str
+    title: str
+    subtitle: Optional[str] = None
+    description: Optional[str] = None
+    emoji: Optional[str] = None
+    grade: DealGrade
+    pricing: DealPricing
+    retailer: Dict[str, Any] = Field(default_factory=dict)
+    product: Optional[str] = None
+    url: str
+    image: Optional[Dict[str, Any]] = None
+    votes: DealVotes = Field(default_factory=DealVotes)
+    comment_count: int = 0
+    tags: Optional[List[DealTag]] = None
+    product_scores: Optional[Dict[str, Any]] = None
+    expires_at: Optional[str] = None
+    created_at: str
+
+
+class DealsPagination(BaseModel):
+    """Deals pagination info"""
+    total: int
+    has_more: bool
+    limit: int
+    offset: int
+
+
+class DealsResponse(BaseModel):
+    """Response from deals endpoint"""
+    success: bool
+    deals: List[Deal]
+    pagination: DealsPagination
+    meta: Optional[APIMeta] = None
+
+
+# Review types
+
+class TLDRReview(BaseModel):
+    """Expert TLDR product review"""
+    slug: str
+    headline: str
+    pros: List[str] = Field(default_factory=list)
+    cons: List[str] = Field(default_factory=list)
+    bottom_line: str = ""
+    scores: Optional[Dict[str, Any]] = None
+
+
+class ReviewResponse(BaseModel):
+    """Response from product reviews endpoint"""
+    success: bool
+    product: Dict[str, str]
+    review: Optional[TLDRReview] = None
+    meta: Optional[APIMeta] = None

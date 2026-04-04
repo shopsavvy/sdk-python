@@ -495,6 +495,26 @@ class ShopSavvyDataAPI:
         """
         return self._make_request("GET", "/products/reviews", params={"id": identifier})
 
+    def batch_lookup(self, identifiers: List[str], include: Optional[List[str]] = None) -> Dict:
+        """
+        Look up multiple products at once (sync for <=20, async for >20)
+
+        Args:
+            identifiers: List of product identifiers (max 100)
+            include: Optional list of extras: ["offers"], ["reviews"], or both
+
+        Returns:
+            Batch results with per-identifier status
+        """
+        body: Dict = {"identifiers": identifiers}
+        if include:
+            body["include"] = include
+        return self._make_request("POST", "/products/batch", body=body)
+
+    def get_batch_status(self, batch_id: str) -> Dict:
+        """Poll for async batch job results"""
+        return self._make_request("GET", f"/batch/{batch_id}")
+
     def get_usage(self) -> APIResponse[UsageInfo]:
         """
         Get API usage information

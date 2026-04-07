@@ -515,6 +515,24 @@ class ShopSavvyDataAPI:
         """Poll for async batch job results"""
         return self._make_request("GET", f"/batch/{batch_id}")
 
+    # ---- Webhooks ----
+
+    def create_webhook(self, url: str, events: List[str]) -> Dict:
+        """Create a webhook to receive event notifications"""
+        return self._make_request("POST", "/webhooks", body={"url": url, "events": events})
+
+    def list_webhooks(self) -> Dict:
+        """List all webhooks for your account"""
+        return self._make_request("GET", "/webhooks")
+
+    def test_webhook(self, webhook_id: str) -> Dict:
+        """Send a test event to a webhook"""
+        return self._make_request("POST", f"/webhooks/{webhook_id}/test")
+
+    def delete_webhook(self, webhook_id: str) -> Dict:
+        """Delete a webhook"""
+        return self._make_request("DELETE", f"/webhooks/{webhook_id}")
+
     def get_usage(self) -> APIResponse[UsageInfo]:
         """
         Get API usage information

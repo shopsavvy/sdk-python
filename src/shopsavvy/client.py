@@ -529,6 +529,25 @@ class ShopSavvyDataAPI:
         """Send a test event to a webhook"""
         return self._make_request("POST", f"/webhooks/{webhook_id}/test")
 
+    def update_webhook(
+        self,
+        webhook_id: str,
+        url: Optional[str] = None,
+        events: Optional[List[str]] = None,
+        is_active: Optional[bool] = None,
+    ) -> Dict:
+        """Update a webhook. All fields are optional, but at least one must be provided."""
+        if url is None and events is None and is_active is None:
+            raise ValueError("update_webhook requires at least one of url, events, or is_active")
+        body: Dict = {}
+        if url is not None:
+            body["url"] = url
+        if events is not None:
+            body["events"] = events
+        if is_active is not None:
+            body["is_active"] = is_active
+        return self._make_request("PUT", f"/webhooks/{webhook_id}", body=body)
+
     def delete_webhook(self, webhook_id: str) -> Dict:
         """Delete a webhook"""
         return self._make_request("DELETE", f"/webhooks/{webhook_id}")

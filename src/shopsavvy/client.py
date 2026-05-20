@@ -509,7 +509,7 @@ class ShopSavvyDataAPI:
         body: Dict = {"identifiers": identifiers}
         if include:
             body["include"] = include
-        return self._make_request("POST", "/products/batch", body=body)
+        return self._make_request("POST", "/products/batch", json_data=body)
 
     def get_batch_status(self, batch_id: str) -> Dict:
         """Poll for async batch job results"""
@@ -519,7 +519,7 @@ class ShopSavvyDataAPI:
 
     def create_webhook(self, url: str, events: List[str]) -> Dict:
         """Create a webhook to receive event notifications"""
-        return self._make_request("POST", "/webhooks", body={"url": url, "events": events})
+        return self._make_request("POST", "/webhooks", json_data={"url": url, "events": events})
 
     def list_webhooks(self) -> Dict:
         """List all webhooks for your account"""
@@ -546,7 +546,7 @@ class ShopSavvyDataAPI:
             body["events"] = events
         if is_active is not None:
             body["is_active"] = is_active
-        return self._make_request("PUT", f"/webhooks/{webhook_id}", body=body)
+        return self._make_request("PUT", f"/webhooks/{webhook_id}", json_data=body)
 
     def delete_webhook(self, webhook_id: str) -> Dict:
         """Delete a webhook"""

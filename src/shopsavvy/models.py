@@ -51,7 +51,7 @@ class ProductDetails(BaseModel):
     categories: Optional[List[str]] = Field(None, description="Category paths")
     attributes: Optional[Dict[str, str]] = Field(None, description="Product specifications (flat key-value)")
     rating: Optional[Dict[str, Any]] = Field(None, description="Aggregated rating with value and count")
-    score: Optional[Dict[str, Any]] = Field(None, description="Expert quality scores (0-100 scale)")
+    score: Optional[Dict[str, Any]] = Field(None, description="Expert quality scores on a 0-1 scale: overall, customer, professional, plus an 'aspects' dict keyed by free-form aspect names from the product's professional reviews")
     keywords: Optional[List[str]] = Field(None, description="Relevant search keywords")
     identifiers: Optional[Dict[str, Any]] = Field(None, description="All known product identifiers")
 
@@ -338,6 +338,9 @@ class TLDRReview(BaseModel):
     pros: List[str] = Field(default_factory=list)
     cons: List[str] = Field(default_factory=list)
     bottom_line: str = ""
+    # Expert quality scores on a 0-1 scale: overall, customer, professional,
+    # plus an 'aspects' dict keyed by free-form aspect names from the
+    # product's professional reviews (the set of aspects varies per product).
     scores: Optional[Dict[str, Any]] = None
 
 

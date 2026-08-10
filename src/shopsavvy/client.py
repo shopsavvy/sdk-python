@@ -311,10 +311,14 @@ class ShopSavvyDataAPI:
             >>> for offer in history.data:
             ...     print(f"{offer.retailer}: {len(offer.price_history)} price points")
         """
+        # Wire params are "start"/"end" — what GET /products/offers/history
+        # reads, and what the OpenAPI spec and public docs document. The old
+        # "start_date"/"end_date" names came from the MCP tool's argument
+        # convention (a different interface entirely) and 400'd every call.
         params = {
             "ids": identifier,
-            "start_date": start_date,
-            "end_date": end_date,
+            "start": start_date,
+            "end": end_date,
         }
         if retailer:
             params["retailer"] = retailer

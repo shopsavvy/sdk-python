@@ -240,10 +240,10 @@ history = api.get_price_history("012345678901", start_date, end_date)
 for offer in history.data:
     print(f"🏪 {offer.retailer}:")
     print(f"   💰 Current price: ${offer.price}")
-    print(f"   📊 Historical points: {len(offer.price_history)}")
+    print(f"   📊 Historical points: {len(offer.history)}")
     
-    if offer.price_history:
-        prices = [point.price for point in offer.price_history]
+    if offer.history:
+        prices = [point.price for point in offer.history]
         print(f"   📉 Lowest: ${min(prices)}")
         print(f"   📈 Highest: ${max(prices)}")
         print(f"   📊 Average: ${sum(prices) / len(prices):.2f}")
@@ -262,8 +262,8 @@ amazon_history = api.get_price_history(
 
 for offer in amazon_history.data:
     print(f"Amazon price trends for {offer.retailer}:")
-    for point in offer.price_history[-10:]:  # Last 10 data points
-        print(f"  {point.date}: ${point.price} ({point.availability})")
+    for point in offer.history[-10:]:  # Last 10 data points
+        print(f"  {point.timestamp}: ${point.price} ({point.availability})")
 ```
 
 ### 🔔 Product Monitoring & Alerts
@@ -506,10 +506,10 @@ def analyze_market_trends(identifiers: list, days: int = 30):
             retailer_stats = {}
             
             for offer in history.data:
-                if not offer.price_history:
+                if not offer.history:
                     continue
                     
-                prices = [point.price for point in offer.price_history]
+                prices = [point.price for point in offer.history]
                 
                 retailer_stats[offer.retailer] = {
                     'current_price': offer.price,
@@ -1146,8 +1146,8 @@ class BusinessIntelligenceDashboard:
                 history = self.api.get_price_history(product_id, start_date, end_date)
                 
                 for offer_history in history.data:
-                    if offer_history.price_history:
-                        prices = [p.price for p in offer_history.price_history]
+                    if offer_history.history:
+                        prices = [p.price for p in offer_history.history]
                         trend = self.calculate_trend_percentage(prices)
                         price_trends.append(trend)
                         

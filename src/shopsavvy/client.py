@@ -309,7 +309,7 @@ class ShopSavvyDataAPI:
         Example:
             >>> history = api.get_price_history("012345678901", "2024-01-01", "2024-01-31")
             >>> for offer in history.data:
-            ...     print(f"{offer.retailer}: {len(offer.price_history)} price points")
+            ...     print(f"{offer.retailer}: {len(offer.history)} price points")
         """
         # Wire params are "start"/"end" — what GET /products/offers/history
         # reads, and what the OpenAPI spec and public docs document. The old

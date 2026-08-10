@@ -90,7 +90,7 @@ class Offer(BaseModel):
     URL: Optional[str] = Field(None, description="Link to product page")
     seller: Optional[str] = Field(None, description="Marketplace seller name")
     timestamp: Optional[str] = Field(None, description="Last update timestamp")
-    history: Optional[List[dict]] = Field(None, description="Price history")
+    history: Optional[List["PriceHistoryEntry"]] = Field(None, description="Price history")
 
     # Convenience aliases
     @property
@@ -110,18 +110,35 @@ class Offer(BaseModel):
 
 
 class PriceHistoryEntry(BaseModel):
-    """Historical price data point"""
-    
-    date: str = Field(..., description="Date of price point")
-    price: float = Field(..., description="Price on this date")
-    availability: str = Field(..., description="Availability on this date")
+    """
+    Historical price data point.
+
+    The timestamp field is ``timestamp``, matching the parent Offer's own ``timestamp``
+    and the real wire shape (``{availability, price, timestamp}``). Every SDK in the fleet
+    declared it as ``date`` — a key the API has never sent — until 2026-08-10
+    (ShopSavvy prospector-audit s28-t2-2 / s28-t2-3).
+    """
+
+    timestamp: str = Field(..., description="ISO-8601 timestamp of the observation")
+    price: float = Field(..., description="Price at this observation")
+    availability: Optional[str] = Field(None, description="Availability at this observation")
 
 
 class OfferWithHistory(Offer):
-    """Offer with historical price data"""
-    
-    price_history: List[PriceHistoryEntry] = Field(
-        ..., description="Historical price data"
+    """
+    Offer with historical price data, as returned by ``get_price_history()``.
+
+    This used to declare a required ``price_history`` field. The API has never sent a key
+    by that name — history has always arrived under ``history`` — so with Pydantic v2 this
+    model raised ``ValidationError: price_history Field required`` on EVERY successful 200
+    response, surfacing to the caller as a raw stack trace rather than data.
+
+    List-typed response fields default to empty rather than being required, so a future
+    server-side rename can never again turn every call into an unhandled ValidationError.
+    """
+
+    history: List[PriceHistoryEntry] = Field(
+        default_factory=list, description="Historical price data"
     )
 
 

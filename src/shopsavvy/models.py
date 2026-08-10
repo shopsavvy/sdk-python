@@ -121,6 +121,7 @@ class PriceHistoryEntry(BaseModel):
 
     timestamp: str = Field(..., description="ISO-8601 timestamp of the observation")
     price: float = Field(..., description="Price at this observation")
+    currency: Optional[str] = Field(None, description="The ISO 4217 currency the price is denominated in. Null on an archived point with no recorded currency — never assume a missing value means USD (ShopSavvy prospector-audit d5-t3-1).")
     availability: Optional[str] = Field(None, description="Availability at this observation")
 
 

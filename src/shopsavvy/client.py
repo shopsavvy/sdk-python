@@ -273,17 +273,26 @@ class ShopSavvyDataAPI:
         identifiers: List[str],
         retailer: Optional[str] = None,
         format: Optional[Literal["json", "csv"]] = None
-    ) -> APIResponse[Dict[str, List[Offer]]]:
+    ) -> APIResponse[List[ProductWithOffers]]:
         """
         Get current offers for multiple products
-        
+
         Args:
             identifiers: List of product identifiers
             retailer: Optional retailer to filter by
             format: Response format (json or csv)
-            
+
         Returns:
-            Dictionary mapping identifiers to their offers
+            One entry per product found (identifiers that match nothing are left out),
+            each with the product fields and its ``offers`` list — the same shape as
+            ``get_current_offers``. Until 1.4.0 this was typed as a dict keyed by
+            identifier, which the API has never returned, so every 200 raised a
+            ValidationError.
+
+        Example:
+            >>> result = api.get_current_offers_batch(["012345678901", "B08N5WRWNW"])
+            >>> for product in result.data:
+            ...     print(product.title, len(product.offers))
         """
         params = {"ids": ",".join(identifiers)}
         if retailer:
@@ -292,7 +301,7 @@ class ShopSavvyDataAPI:
             params["format"] = format
 
         response_data = self._make_request("GET", "/products/offers", params=params)
-        return APIResponse[Dict[str, List[Offer]]](**response_data)
+        return APIResponse[List[ProductWithOffers]](**response_data)
     
     def get_price_history(
         self,

@@ -217,12 +217,14 @@ for offer in amazon_offers.data:
 products = ["012345678901", "B08N5WRWNW", "045496596439"]
 batch_offers = api.get_current_offers_batch(products)
 
-for identifier, offers in batch_offers.data.items():
-    best_price = min(offers, key=lambda x: x.price) if offers else None
+# `data` has one entry per product found, each with its own `offers` list
+for product in batch_offers.data:
+    priced = [o for o in product.offers if o.price is not None]
+    best_price = min(priced, key=lambda x: x.price) if priced else None
     if best_price:
-        print(f"{identifier}: Best price ${best_price.price} at {best_price.retailer}")
+        print(f"{product.barcode}: Best price ${best_price.price} at {best_price.retailer}")
     else:
-        print(f"{identifier}: No offers found")
+        print(f"{product.barcode}: No offers found")
 ```
 
 ### 📈 Price History & Trends
@@ -378,9 +380,11 @@ def find_best_deals(identifier: str, max_results: int = 5):
             return
         
         # Filter and sort offers
+        # Availability values are "in", "out", "limited", "pre-order",
+        # "coming-soon", "discontinued" (omitted when unknown)
         available_offers = [
-            offer for offer in offers.data 
-            if offer.availability == "in_stock"
+            offer for product in offers.data for offer in product.offers
+            if offer.availability == "in"
         ]
         
         if not available_offers:
@@ -450,7 +454,7 @@ class PriceAlertBot:
                 
                 # Find best available offer
                 best_offer = min(
-                    [o for o in offers.data if o.availability == "in_stock"],
+                    [o for p in offers.data for o in p.offers if o.availability == "in"],
                     key=lambda x: x.price,
                     default=None
                 )
@@ -614,9 +618,13 @@ def bulk_product_manager(csv_file_path: str):
         
         results = []
         
+        # get_current_offers_batch returns one entry per product found, in the
+        # same product shape as get_product_details_batch; match them by ShopSavvy ID
+        offers_by_product = {p.shopsavvy: p.offers for p in current_offers.data}
+
         for product, details in zip(products, product_details.data):
-            offers = current_offers.data.get(product['identifier'], [])
-            best_price = min([o.price for o in offers if o.availability == "in_stock"], default=None)
+            offers = offers_by_product.get(details.shopsavvy, [])
+            best_price = min([o.price for o in offers if o.availability == "in" and o.price is not None], default=None)
             
             result = {
                 'identifier': product['identifier'],
@@ -671,8 +679,9 @@ def export_product_data(identifiers: list, format: str = "json"):
             "products": []
         }
         
+        offers_by_product = {p.shopsavvy: p.offers for p in offers.data}
         for product in products.data:
-            product_offers = offers.data.get(product.product_id, [])
+            product_offers = offers_by_product.get(product.shopsavvy, [])
             export_data["products"].append({
                 "product": product.dict(),
                 "offers": [offer.dict() for offer in product_offers]
@@ -1204,7 +1213,7 @@ def scan_product():
         offers = api.get_current_offers(barcode)
         
         # Find best deals
-        available_offers = [o for o in offers.data if o.availability == "in_stock"]
+        available_offers = [o for p in offers.data for o in p.offers if o.availability == "in"]
         best_offer = min(available_offers, key=lambda x: x.price) if available_offers else None
         
         response = {

@@ -21,6 +21,7 @@ from .exceptions import (
 from .models import (
     APIMeta,
     APIResponse,
+    MessageResponse,
     Offer,
     ProductDetails,
     ProductSearchResult,
@@ -339,114 +340,107 @@ class ShopSavvyDataAPI:
         response_data = self._make_request("GET", "/products/offers/history", params=params)
         return APIResponse[List[ProductWithPriceHistory]](**response_data)
     
+    # Scheduling endpoints read ONLY query parameters (refinery entrypoint-api.ts
+    # `schedule` / `unschedule` handlers): PUT /products/scheduled?ids=&schedule=[&retailer=]
+    # and DELETE /products/scheduled?ids=. Before 1.4.0 this client sent a JSON body
+    # ({identifier(s), frequency, retailer}) to POST/DELETE /products/schedule, which the
+    # server ignores entirely, so every call failed with "an 'ids' parameter is required".
+
     def schedule_product_monitoring(
         self,
         identifier: str,
         frequency: Literal["hourly", "daily", "weekly"],
         retailer: Optional[str] = None
-    ) -> APIResponse[Dict[str, Union[bool, str]]]:
+    ) -> APIResponse[List[ScheduledProduct]]:
         """
-        Schedule product monitoring
-        
+        Schedule a product for regular price/availability refreshes
+
         Args:
             identifier: Product identifier
-            frequency: How often to refresh ('hourly', 'daily', 'weekly')
-            retailer: Optional retailer to monitor
-            
+            frequency: How often to refresh ('hourly', 'daily', 'weekly'), sent as ``schedule``
+            retailer: Optional retailer domain to limit refreshes to (e.g. "amazon.com")
+
         Returns:
-            Scheduling confirmation
-            
+            The scheduled product(s), each with its ``schedule`` (and ``retailer`` if set)
+
         Example:
             >>> result = api.schedule_product_monitoring("012345678901", "daily")
-            >>> print(f"Scheduled: {result.data['scheduled']}")
+            >>> for product in result.data:
+            ...     print(f"{product.title}: {product.schedule}")
         """
-        json_data = {
-            "identifier": identifier,
-            "frequency": frequency,
-        }
-        if retailer:
-            json_data["retailer"] = retailer
-        
-        response_data = self._make_request("POST", "/products/schedule", json_data=json_data)
-        return APIResponse[Dict[str, Union[bool, str]]](**response_data)
-    
+        return self.schedule_product_monitoring_batch([identifier], frequency, retailer)
+
     def schedule_product_monitoring_batch(
         self,
         identifiers: List[str],
         frequency: Literal["hourly", "daily", "weekly"],
         retailer: Optional[str] = None
-    ) -> APIResponse[List[Dict[str, Union[str, bool]]]]:
+    ) -> APIResponse[List[ScheduledProduct]]:
         """
-        Schedule monitoring for multiple products
-        
+        Schedule multiple products for regular refreshes
+
         Args:
             identifiers: List of product identifiers
-            frequency: How often to refresh
-            retailer: Optional retailer to monitor
-            
+            frequency: How often to refresh ('hourly', 'daily', 'weekly'), sent as ``schedule``
+            retailer: Optional retailer domain to limit refreshes to
+
         Returns:
-            Scheduling confirmation for all products
+            The products that were found and scheduled
         """
-        json_data = {
-            "identifiers": ",".join(identifiers),
-            "frequency": frequency,
+        params = {
+            "ids": ",".join(identifiers),
+            "schedule": frequency,
         }
         if retailer:
-            json_data["retailer"] = retailer
-        
-        response_data = self._make_request("POST", "/products/schedule", json_data=json_data)
-        return APIResponse[List[Dict[str, Union[str, bool]]]](**response_data)
-    
+            params["retailer"] = retailer
+
+        response_data = self._make_request("PUT", "/products/scheduled", params=params)
+        return APIResponse[List[ScheduledProduct]](**response_data)
+
     def get_scheduled_products(self) -> APIResponse[List[ScheduledProduct]]:
         """
         Get all scheduled products
-        
+
         Returns:
-            List of scheduled products
-            
+            List of scheduled products (full product fields plus ``schedule``/``retailer``)
+
         Example:
             >>> scheduled = api.get_scheduled_products()
             >>> print(f"Monitoring {len(scheduled.data)} products")
         """
         response_data = self._make_request("GET", "/products/scheduled")
         return APIResponse[List[ScheduledProduct]](**response_data)
-    
-    def remove_product_from_schedule(
-        self, identifier: str
-    ) -> APIResponse[Dict[str, bool]]:
+
+    def remove_product_from_schedule(self, identifier: str) -> MessageResponse:
         """
-        Remove product from monitoring schedule
-        
+        Remove a product from the refresh schedule
+
         Args:
             identifier: Product identifier to remove
-            
+
         Returns:
-            Removal confirmation
-            
+            Confirmation (``success`` and ``message``); the API returns no ``data``
+
         Example:
             >>> result = api.remove_product_from_schedule("012345678901")
-            >>> print(f"Removed: {result.data['removed']}")
+            >>> print(result.success, result.message)
         """
-        json_data = {"identifier": identifier}
-        response_data = self._make_request("DELETE", "/products/schedule", json_data=json_data)
-        return APIResponse[Dict[str, bool]](**response_data)
-    
-    def remove_products_from_schedule(
-        self, identifiers: List[str]
-    ) -> APIResponse[List[Dict[str, Union[str, bool]]]]:
+        return self.remove_products_from_schedule([identifier])
+
+    def remove_products_from_schedule(self, identifiers: List[str]) -> MessageResponse:
         """
-        Remove multiple products from monitoring schedule
-        
+        Remove multiple products from the refresh schedule
+
         Args:
             identifiers: List of product identifiers to remove
-            
+
         Returns:
-            Removal confirmation for all products
+            Confirmation (``success`` and ``message``); the API returns no ``data``
         """
-        json_data = {"identifiers": ",".join(identifiers)}
-        response_data = self._make_request("DELETE", "/products/schedule", json_data=json_data)
-        return APIResponse[List[Dict[str, Union[str, bool]]]](**response_data)
-    
+        params = {"ids": ",".join(identifiers)}
+        response_data = self._make_request("DELETE", "/products/scheduled", params=params)
+        return MessageResponse(**response_data)
+
     def get_deals(
         self,
         sort: str = "hot",

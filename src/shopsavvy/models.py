@@ -146,19 +146,40 @@ class OfferWithHistory(Offer):
     )
 
 
-class ScheduledProduct(BaseModel):
-    """Scheduled product monitoring information"""
-    
-    product_id: str = Field(..., description="Product identifier")
-    identifier: str = Field(..., description="Original identifier used")
-    frequency: Literal["hourly", "daily", "weekly"] = Field(
-        ..., description="Monitoring frequency"
+class ScheduledProduct(ProductDetails):
+    """
+    A product on the caller's refresh schedule, as returned by
+    ``schedule_product_monitoring*()`` and ``get_scheduled_products()``.
+
+    The API returns the full product (same fields as ``get_product_details``) plus
+    ``schedule`` and, when the schedule is limited to one retailer, ``retailer``. Before
+    1.4.0 this model declared ``product_id``/``identifier``/``frequency``/``created_at``
+    as required — keys the API has never sent — so listing scheduled products raised a
+    ValidationError on every 200.
+    """
+
+    schedule: Optional[Literal["hourly", "daily", "weekly"]] = Field(
+        None,
+        description="Refresh frequency. Absent when the product was scheduled at an interval "
+        "the Data API has no label for (e.g. a 4h/12h ShopSavvy Business schedule).",
     )
-    retailer: Optional[str] = Field(None, description="Specific retailer to monitor")
-    created_at: str = Field(..., description="Schedule creation timestamp")
-    last_refreshed: Optional[str] = Field(
-        None, description="Last refresh timestamp"
+    retailer: Optional[str] = Field(
+        None, description="Retailer domain the schedule is limited to, if any"
     )
+
+    @property
+    def frequency(self) -> Optional[str]:
+        """Alias for schedule"""
+        return self.schedule
+
+
+class MessageResponse(BaseModel):
+    """Response for endpoints that confirm an action without returning data
+    (e.g. removing products from the schedule)."""
+
+    success: bool = Field(..., description="Whether request was successful")
+    message: Optional[str] = Field(None, description="Human-readable confirmation")
+    meta: Optional["APIMeta"] = Field(None, description="Response metadata")
 
 
 class UsagePeriod(BaseModel):
@@ -293,11 +314,11 @@ ProductSearchResponse = ProductSearchResult
 OffersResponse = APIResponse[List[ProductWithOffers]]
 OffersBatchResponse = APIResponse[Dict[str, List[Offer]]]
 PriceHistoryResponse = APIResponse[List[ProductWithPriceHistory]]
-SchedulingResponse = APIResponse[Dict[str, Union[bool, str]]]
-SchedulingBatchResponse = APIResponse[List[Dict[str, Union[str, bool]]]]
+SchedulingResponse = APIResponse[List[ScheduledProduct]]
+SchedulingBatchResponse = APIResponse[List[ScheduledProduct]]
 ScheduledProductsResponse = APIResponse[List[ScheduledProduct]]
-RemovalResponse = APIResponse[Dict[str, bool]]
-RemovalBatchResponse = APIResponse[List[Dict[str, Union[str, bool]]]]
+RemovalResponse = MessageResponse
+RemovalBatchResponse = MessageResponse
 UsageResponse = APIResponse[UsageInfo]
 
 
@@ -389,3 +410,5 @@ class ReviewResponse(BaseModel):
     product: Dict[str, str]
     review: Optional[TLDRReview] = None
     meta: Optional[APIMeta] = None
+
+MessageResponse.model_rebuild()

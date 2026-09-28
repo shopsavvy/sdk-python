@@ -283,17 +283,18 @@ for product in amazon_history.data:
 #### Schedule Single Product Monitoring
 ```python
 # Monitor daily across all retailers
+# Sends PUT /v1/products/scheduled?ids=012345678901&schedule=daily
 result = api.schedule_product_monitoring("012345678901", "daily")
-if result.data.get("scheduled"):
-    print("✅ Daily monitoring activated!")
+for product in result.data:
+    print(f"✅ {product.title}: refreshed {product.schedule}")
 
-# Monitor hourly at specific retailer
+# Monitor hourly at a specific retailer
 result = api.schedule_product_monitoring(
-    "012345678901", 
-    "hourly", 
-    retailer="amazon"
+    "012345678901",
+    "hourly",
+    retailer="amazon.com"
 )
-print(f"Amazon monitoring: {result.data}")
+print(f"Amazon monitoring: {[p.title for p in result.data]}")
 ```
 
 #### Batch Monitoring Setup
@@ -307,11 +308,11 @@ products_to_monitor = [
 
 batch_result = api.schedule_product_monitoring_batch(products_to_monitor, "daily")
 
-for item in batch_result.data:
-    if item.get('scheduled'):
-        print(f"✅ Monitoring activated for {item['identifier']}")
-    else:
-        print(f"❌ Failed to monitor {item['identifier']}")
+# `data` holds the products that were found and scheduled; identifiers that
+# matched no product are simply absent.
+for product in batch_result.data:
+    print(f"✅ Monitoring {product.title} ({product.barcode}) {product.schedule}")
+print(f"Scheduled {len(batch_result.data)} of {len(products_to_monitor)}")
 ```
 
 #### Manage Scheduled Products
@@ -321,17 +322,14 @@ scheduled = api.get_scheduled_products()
 print(f"📊 Currently monitoring {len(scheduled.data)} products:")
 
 for product in scheduled.data:
-    print(f"🔔 {product.identifier}")
-    print(f"   📅 Frequency: {product.frequency}")
+    print(f"🔔 {product.title} ({product.shopsavvy})")
+    print(f"   📅 Frequency: {product.schedule}")
     print(f"   🏪 Retailer: {product.retailer or 'All retailers'}")
-    print(f"   📅 Created: {product.created_at}")
-    if product.last_refreshed:
-        print(f"   🔄 Last refresh: {product.last_refreshed}")
     print("---")
 
-# Remove products from monitoring
-api.remove_product_from_schedule("012345678901")
-print("🗑️  Removed from monitoring")
+# Remove products from monitoring (DELETE /v1/products/scheduled?ids=...)
+result = api.remove_product_from_schedule("012345678901")
+print(f"🗑️  {result.message}")
 
 # Remove multiple products
 api.remove_products_from_schedule(["012345678901", "B08N5WRWNW"])
@@ -1257,7 +1255,7 @@ def create_price_alert():
         return jsonify({
             'success': True,
             'message': 'Price alert created successfully',
-            'monitoring_active': result.data.get('scheduled', False)
+            'monitoring_active': len(result.data) > 0
         })
         
     except Exception as e:

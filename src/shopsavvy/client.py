@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 
 import httpx
 
+from ._version import __version__
 from .exceptions import (
     APIError,
     AuthenticationError,
@@ -21,10 +22,10 @@ from .models import (
     APIMeta,
     APIResponse,
     Offer,
-    OfferWithHistory,
     ProductDetails,
     ProductSearchResult,
     ProductWithOffers,
+    ProductWithPriceHistory,
     ScheduledProduct,
     ShopSavvyConfig,
     UsageInfo,
@@ -40,6 +41,8 @@ class ShopSavvyDataAPI:
     
     Args:
         config: Configuration object with API key and optional settings
+        transport: Optional httpx transport (e.g. a proxy-mounted transport, or
+            ``httpx.MockTransport`` in tests); defaults to httpx's own
         
     Example:
         >>> from shopsavvy import ShopSavvyDataAPI, ShopSavvyConfig
@@ -52,7 +55,11 @@ class ShopSavvyDataAPI:
         >>> print(product.data.name)
     """
     
-    def __init__(self, config: Union[ShopSavvyConfig, dict]):
+    def __init__(
+        self,
+        config: Union[ShopSavvyConfig, dict],
+        transport: Optional[httpx.BaseTransport] = None,
+    ):
         if isinstance(config, dict):
             config = ShopSavvyConfig(**config)
         
@@ -60,10 +67,11 @@ class ShopSavvyDataAPI:
         self._client = httpx.Client(
             base_url=config.base_url,
             timeout=config.timeout,
+            transport=transport,
             headers={
                 "Authorization": f"Bearer {config.api_key}",
                 "Content-Type": "application/json",
-                "User-Agent": "ShopSavvy-Python-SDK/1.0.0",
+                "User-Agent": f"ShopSavvy-Python-SDK/{__version__}",
             },
         )
     
@@ -292,24 +300,27 @@ class ShopSavvyDataAPI:
         end_date: str,
         retailer: Optional[str] = None,
         format: Optional[Literal["json", "csv"]] = None
-    ) -> APIResponse[List[OfferWithHistory]]:
+    ) -> APIResponse[List[ProductWithPriceHistory]]:
         """
         Get price history for a product
-        
+
         Args:
-            identifier: Product identifier
-            start_date: Start date (YYYY-MM-DD format)
-            end_date: End date (YYYY-MM-DD format)
-            retailer: Optional retailer to filter by
+            identifier: Product identifier (comma-separate several to fetch multiple products)
+            start_date: Start date (YYYY-MM-DD format), sent as ``start``
+            end_date: End date (YYYY-MM-DD format), sent as ``end``
+            retailer: Optional retailer domain to filter by (e.g. "amazon.com")
             format: Response format (json or csv)
-            
+
         Returns:
-            Offers with price history
-            
+            One entry per product found; each has ``offers``, and each offer has a
+            ``history`` list of price points (newest first)
+
         Example:
-            >>> history = api.get_price_history("012345678901", "2024-01-01", "2024-01-31")
-            >>> for offer in history.data:
-            ...     print(f"{offer.retailer}: {len(offer.history)} price points")
+            >>> result = api.get_price_history("012345678901", "2024-01-01", "2024-01-31")
+            >>> for product in result.data:
+            ...     for offer in product.offers:
+            ...         for point in offer.history:
+            ...             print(offer.retailer, point.timestamp, point.price, point.currency)
         """
         # Wire params are "start"/"end" — what GET /products/offers/history
         # reads, and what the OpenAPI spec and public docs document. The old
@@ -326,7 +337,7 @@ class ShopSavvyDataAPI:
             params["format"] = format
 
         response_data = self._make_request("GET", "/products/offers/history", params=params)
-        return APIResponse[List[OfferWithHistory]](**response_data)
+        return APIResponse[List[ProductWithPriceHistory]](**response_data)
     
     def schedule_product_monitoring(
         self,

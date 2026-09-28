@@ -114,7 +114,8 @@ class PriceHistoryEntry(BaseModel):
     Historical price data point.
 
     The timestamp field is ``timestamp``, matching the parent Offer's own ``timestamp``
-    and the real wire shape (``{availability, price, timestamp}``). Every SDK in the fleet
+    and the real wire shape (``{availability, price, currency, timestamp}``). Points
+    arrive newest first; ``availability`` is omitted when unknown. Every SDK in the fleet
     declared it as ``date`` — a key the API has never sent — until 2026-08-10
     (ShopSavvy prospector-audit s28-t2-2 / s28-t2-3).
     """
@@ -127,7 +128,8 @@ class PriceHistoryEntry(BaseModel):
 
 class OfferWithHistory(Offer):
     """
-    Offer with historical price data, as returned by ``get_price_history()``.
+    Offer with historical price data, nested under each product's ``offers`` in a
+    ``get_price_history()`` response (see ``ProductWithPriceHistory``).
 
     This used to declare a required ``price_history`` field. The API has never sent a key
     by that name — history has always arrived under ``history`` — so with Pydantic v2 this
@@ -214,6 +216,7 @@ class PaginationInfo(BaseModel):
 class APIMeta(BaseModel):
     """API response metadata"""
 
+    request_id: Optional[str] = Field(None, description="Request identifier, quote it in support requests")
     credits_used: int = Field(0, description="Credits used for request")
     credits_remaining: int = Field(0, description="Credits remaining after request")
     rate_limit_remaining: Optional[int] = Field(None, description="Rate limit remaining")
@@ -245,6 +248,23 @@ class ProductWithOffers(ProductDetails):
     offers: List[Offer] = Field(default_factory=list, description="Product offers")
 
 
+class ProductWithPriceHistory(ProductWithOffers):
+    """
+    One product in a ``get_price_history()`` response.
+
+    ``GET /products/offers/history`` returns one entry PER PRODUCT — the same product
+    fields as the products endpoint — with an ``offers`` list in which every offer carries
+    its own ``history`` series. Until 1.4.0 this SDK typed ``data`` as a flat list of
+    offers with a required ``id``, so every real 200 raised
+    ``ValidationError: data.0.id Field required`` (the first key checked on a product).
+    """
+
+    offers: List[OfferWithHistory] = Field(  # type: ignore[assignment]
+        default_factory=list,
+        description="Offers at each retailer, each with its price history (newest point first)",
+    )
+
+
 class APIResponse(BaseModel, Generic[T]):
     """Standard API response wrapper"""
 
@@ -271,7 +291,7 @@ ProductDetailsBatchResponse = APIResponse[List[ProductDetails]]
 ProductSearchResponse = ProductSearchResult
 OffersResponse = APIResponse[List[ProductWithOffers]]
 OffersBatchResponse = APIResponse[Dict[str, List[Offer]]]
-PriceHistoryResponse = APIResponse[List[OfferWithHistory]]
+PriceHistoryResponse = APIResponse[List[ProductWithPriceHistory]]
 SchedulingResponse = APIResponse[Dict[str, Union[bool, str]]]
 SchedulingBatchResponse = APIResponse[List[Dict[str, Union[str, bool]]]]
 ScheduledProductsResponse = APIResponse[List[ScheduledProduct]]

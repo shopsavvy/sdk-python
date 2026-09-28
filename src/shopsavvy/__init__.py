@@ -8,12 +8,16 @@ across thousands of retailers and millions of products.
 For more information, visit: https://shopsavvy.com/data
 """
 
+from ._version import __version__
 from .client import ShopSavvyDataAPI, create_client
 from .models import (
     ProductDetails,
     Offer,
     PriceHistoryEntry,
     OfferWithHistory,
+    ProductWithOffers,
+    ProductWithPriceHistory,
+    APIMeta,
     ScheduledProduct,
     UsageInfo,
     APIResponse,
@@ -35,7 +39,6 @@ from .exceptions import (
     ValidationError,
 )
 
-__version__ = "1.1.0"
 __author__ = "ShopSavvy by Monolith Technologies, Inc."
 __email__ = "business@shopsavvy.com"
 
@@ -46,8 +49,11 @@ __all__ = [
     # Models
     "ProductDetails",
     "Offer",
-    "PriceHistoryEntry", 
+    "PriceHistoryEntry",
     "OfferWithHistory",
+    "ProductWithOffers",
+    "ProductWithPriceHistory",
+    "APIMeta",
     "ScheduledProduct",
     "UsageInfo",
     "APIResponse",

@@ -235,35 +235,47 @@ from datetime import datetime, timedelta
 end_date = datetime.now().strftime("%Y-%m-%d")
 start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
 
-history = api.get_price_history("012345678901", start_date, end_date)
+result = api.get_price_history("012345678901", start_date, end_date)
 
-for offer in history.data:
-    print(f"🏪 {offer.retailer}:")
-    print(f"   💰 Current price: ${offer.price}")
-    print(f"   📊 Historical points: {len(offer.history)}")
-    
-    if offer.history:
-        prices = [point.price for point in offer.history]
-        print(f"   📉 Lowest: ${min(prices)}")
-        print(f"   📈 Highest: ${max(prices)}")
-        print(f"   📊 Average: ${sum(prices) / len(prices):.2f}")
-    print("---")
+# `data` holds one entry per product; each product has `offers`, and each
+# offer carries its own `history` (newest point first).
+for product in result.data:
+    print(f"📦 {product.title}")
+    for offer in product.offers:
+        print(f"🏪 {offer.retailer}:")
+        print(f"   💰 Current price: {offer.price} {offer.currency}")
+        print(f"   📊 Historical points: {len(offer.history)}")
+
+        if offer.history:
+            prices = [point.price for point in offer.history]
+            print(f"   📉 Lowest: {min(prices)}")
+            print(f"   📈 Highest: {max(prices)}")
+            print(f"   📊 Average: {sum(prices) / len(prices):.2f}")
+        print("---")
+
+print(f"Credits used: {result.credits_used}, remaining: {result.credits_remaining}")
 ```
+
+Each history point is a `PriceHistoryEntry` with `timestamp` (ISO-8601), `price`,
+`currency` (ISO 4217, `None` if the archived point recorded none — never assume USD)
+and `availability` (`"in"`/`"out"`, or `None` when unknown). eBay listings can appear
+in `offers` but always have an empty `history`.
 
 #### Retailer-Specific History
 ```python
 # Get price history from Amazon only
 amazon_history = api.get_price_history(
-    "012345678901", 
-    "2024-01-01", 
+    "012345678901",
+    "2024-01-01",
     "2024-01-31",
-    retailer="amazon"
+    retailer="amazon.com"
 )
 
-for offer in amazon_history.data:
-    print(f"Amazon price trends for {offer.retailer}:")
-    for point in offer.history[-10:]:  # Last 10 data points
-        print(f"  {point.timestamp}: ${point.price} ({point.availability})")
+for product in amazon_history.data:
+    for offer in product.offers:
+        print(f"Price trends for {product.title} at {offer.retailer}:")
+        for point in offer.history[:10]:  # 10 most recent points (newest first)
+            print(f"  {point.timestamp}: {point.price} {point.currency} ({point.availability})")
 ```
 
 ### 🔔 Product Monitoring & Alerts
@@ -505,11 +517,14 @@ def analyze_market_trends(identifiers: list, days: int = 30):
             
             retailer_stats = {}
             
-            for offer in history.data:
+            offers = [offer for p in history.data for offer in p.offers]
+
+            for offer in offers:
                 if not offer.history:
                     continue
-                    
-                prices = [point.price for point in offer.history]
+
+                # history arrives newest first; oldest-first for trend math
+                prices = [point.price for point in reversed(offer.history)]
                 
                 retailer_stats[offer.retailer] = {
                     'current_price': offer.price,

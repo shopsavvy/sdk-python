@@ -5,7 +5,7 @@ Data models for ShopSavvy Data API
 from datetime import datetime
 from typing import Any, Dict, Generic, List, Literal, Optional, TypeVar, Union
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 T = TypeVar("T")
 
@@ -20,7 +20,8 @@ class ShopSavvyConfig(BaseModel):
     )
     timeout: float = Field(default=30.0, description="Request timeout in seconds")
 
-    @validator("api_key")
+    @field_validator("api_key")
+    @classmethod
     def validate_api_key(cls, v: str) -> str:
         if not v:
             raise ValueError("API key is required")

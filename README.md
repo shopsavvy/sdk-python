@@ -7,7 +7,7 @@
 
 **The most comprehensive Python SDK for e-commerce product data and pricing intelligence.** 
 
-Access real-time product information, pricing data, and historical trends across **tens of thousands of retailers** and **tens of millions of products** with the official [ShopSavvy Data API](https://shopsavvy.com/data).
+Access real-time product information, pricing data, and historical trends across **tens of thousands of retailers** and **30M+ products** with the official [ShopSavvy Data API](https://shopsavvy.com/data).
 
 ---
 

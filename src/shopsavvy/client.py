@@ -38,7 +38,7 @@ class ShopSavvyDataAPI:
     Official Python client for ShopSavvy Data API
     
     Provides access to product data, pricing information, and price history
-    across thousands of retailers and millions of products.
+    across tens of thousands of retailers and 30M+ products.
     
     Args:
         config: Configuration object with API key and optional settings

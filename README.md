@@ -7,7 +7,7 @@
 
 **The most comprehensive Python SDK for e-commerce product data and pricing intelligence.** 
 
-Access real-time product information, pricing data, and historical trends across **thousands of retailers** and **millions of products** with the official [ShopSavvy Data API](https://shopsavvy.com/data).
+Access real-time product information, pricing data, and historical trends across **tens of thousands of retailers** and **tens of millions of products** with the official [ShopSavvy Data API](https://shopsavvy.com/data).
 
 ---
 
@@ -1320,7 +1320,7 @@ ShopSavvy has been comparing prices since 2008, and the app has 40M+ downloads. 
 - **JSON or CSV** responses, with credits used and remaining on every response
 - **Open-source SDKs in 10 languages**: Python, TypeScript, Go, Rust, Java, Kotlin, Swift, PHP, Ruby and C#
 
-Plans and the 14-day Starter trial are at [shopsavvy.com/data](https://shopsavvy.com/data); full reference at [shopsavvy.com/data/documentation](https://shopsavvy.com/data/documentation).
+Plans and the 14-day trial are at [shopsavvy.com/data](https://shopsavvy.com/data); full reference at [shopsavvy.com/data/documentation](https://shopsavvy.com/data/documentation).
 
 ---
 

@@ -1309,19 +1309,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🏢 About ShopSavvy
+## About ShopSavvy
 
-**ShopSavvy** has been helping shoppers save money since 2008. With over **40 million downloads** and **millions of active users**, we're the most trusted name in price comparison and shopping intelligence.
+ShopSavvy has been comparing prices since 2008, and the app has 40M+ downloads. The ShopSavvy Data API serves the same product and price data over REST: send a barcode (UPC/EAN/ISBN), ASIN, product URL, model number or MPN, and get back the product record, current offers from tens of thousands of retailers, and price history back to 2011 (dense from 2019).
 
-Our **Data API** provides the same powerful product data and pricing intelligence that powers our consumer app, now available to developers and businesses worldwide.
+- **Lookup by any identifier**: barcode, ASIN, URL, model number, MPN or ShopSavvy ID, up to 100 per request
+- **Current offers**: price, availability, condition, seller and when each offer was last seen
+- **Price history**: quality-filtered price points per retailer over any date range
+- **Scheduled refreshes**: hourly, daily or weekly re-checks for the products you care about, at retailers that can be re-checked through an official retailer API (others update as ShopSavvy sees them)
+- **JSON or CSV** responses, with credits used and remaining on every response
+- **Open-source SDKs in 10 languages**: Python, TypeScript, Go, Rust, Java, Kotlin, Swift, PHP, Ruby and C#
 
-### Why Choose ShopSavvy?
-
-- ✅ **13+ Years** of e-commerce data expertise
-- ✅ **Millions of Products** across thousands of retailers
-- ✅ **Real-Time Data** updated continuously
-- ✅ **Enterprise Scale** trusted by major brands
-- ✅ **Developer Friendly** with comprehensive tools and support
+Plans and the 14-day Starter trial are at [shopsavvy.com/data](https://shopsavvy.com/data); full reference at [shopsavvy.com/data/documentation](https://shopsavvy.com/data/documentation).
 
 ---
 

@@ -264,10 +264,38 @@ class ProductSearchResult(BaseModel):
         return self.meta.credits_remaining if self.meta else 0
 
 
+class InStoreLocation(BaseModel):
+    """Where an in-store price was charged"""
+
+    address: Optional[str] = Field(None, description="Street address of the store")
+    latitude: Optional[float] = Field(None, description="Store latitude")
+    longitude: Optional[float] = Field(None, description="Store longitude")
+
+
+class InStorePrice(BaseModel):
+    """
+    A shelf price a physical store charged on a given day, read from a shopper's scanned
+    receipt. ``source`` is always ``"user-collected"``. It says what the store sold the
+    product for that day, not that it is in stock now. Nothing about the shopper is included.
+    """
+
+    source: str = Field("user-collected", description='Always "user-collected"')
+    retailer: Optional[str] = Field(None, description="Retailer name, e.g. Kroger")
+    store: InStoreLocation = Field(default_factory=InStoreLocation, description="The store")
+    price: float = Field(..., description="Unit shelf price paid (median when several receipts agree)")
+    currency: str = Field(..., description="ISO 4217 currency of price")
+    observed_on: Optional[str] = Field(None, description="YYYY-MM-DD of the most recent receipt behind the price")
+    timestamp: Optional[str] = Field(None, description="When ShopSavvy last updated this price")
+
+
 class ProductWithOffers(ProductDetails):
     """Product with nested offers (returned by offers endpoint)"""
 
     offers: List[Offer] = Field(default_factory=list, description="Product offers")
+    in_store_prices: List[InStorePrice] = Field(
+        default_factory=list,
+        description="User-collected in-store prices from shoppers' receipts (empty when none, and on price history)",
+    )
 
 
 class ProductWithPriceHistory(ProductWithOffers):

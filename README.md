@@ -49,6 +49,16 @@ print("🔔 Price alerts activated!")
 
 ---
 
+### In-Store Prices (user-collected)
+
+Each product from the current-offers call also carries `in_store_prices`: shelf prices physical stores charged, read from receipts ShopSavvy app users scanned. Every entry is labeled `source: "user-collected"` and has the retailer, the store's address and coordinates, the price and the receipt date (`observed_on`). It is a price on that day, not current stock, and says nothing about the shopper. Empty when none are on file.
+
+```python
+result = api.get_current_offers("011110838360")
+for in_store in result.data[0].in_store_prices:
+    print(f"{in_store.retailer} ({in_store.store.address}): ${in_store.price} on {in_store.observed_on}")
+```
+
 ## 🎯 Key Features
 
 | Feature | Description | Use Cases |

@@ -1305,6 +1305,8 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 | Resource | Link | Description |
 |----------|------|-------------|
 | 🌐 **API Documentation** | [shopsavvy.com/data/documentation](https://shopsavvy.com/data/documentation) | Complete API reference |
+| 🧪 **Postman Collection** | [shopsavvy.com/templates/data-api-postman-collection](https://shopsavvy.com/templates/data-api-postman-collection) | Every endpoint, ready to import |
+| 🔎 **Free UPC Lookup** | [shopsavvy.com/tools/upc-lookup](https://shopsavvy.com/tools/upc-lookup) | Look up any barcode in the browser, no code |
 | 📊 **Dashboard** | [shopsavvy.com/data/dashboard](https://shopsavvy.com/data/dashboard) | Manage your API keys and usage |
 | 💬 **Support** | [business@shopsavvy.com](mailto:business@shopsavvy.com) | Get help from our team |
 | 🐛 **Issues** | [GitHub Issues](https://github.com/shopsavvy/sdk-python/issues) | Report bugs and request features |
